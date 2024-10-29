@@ -135,6 +135,7 @@ WORKDIR /home/$USER/src/plc_webapp
 # Install flask
 USER root
 RUN pip install flask
+RUN pip install flask-socketio
 USER $USER
 
 # Run the webapp

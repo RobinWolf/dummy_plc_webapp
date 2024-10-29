@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PLC Control Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
     <div class="section" id="ip-setup">
@@ -58,42 +59,27 @@
     </div>
 
     <script>
+        const socket = io();
+
         function sendCommand() {
-            const formData = new FormData();
-
-            // Collect IP setup data
-            formData.append('ip', document.getElementById('ip').value);
-            formData.append('port', document.getElementById('port').value);
-
-            // Collect command data
-            formData.append('command', document.getElementById('command').value);
-            formData.append('class', document.getElementById('class').value);
-            formData.append('mode', document.getElementById('mode').value);
-            formData.append('reserved', document.getElementById('reserved').value);
-
-            // Make the fetch call to the server
-            fetch('/send_command', {
-                method: 'POST',
-                body: new URLSearchParams(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    document.getElementById('response-error').textContent = data.error;
-                    document.getElementById('status').textContent = '-';
-                    document.getElementById('counter').textContent = '-';
-                    document.getElementById('errorcode').textContent = '-';
-                } else {
-                    document.getElementById('status').textContent = data.status; // Updated field to match backend
-                    document.getElementById('counter').textContent = data.counter;
-                    document.getElementById('errorcode').textContent = data.errorcode;
-                    document.getElementById('response-error').textContent = '';
-                }
-            })
-            .catch(error => {
-                document.getElementById('response-error').textContent = 'Error: ' + error;
-            });
+            const commandData = {
+                ip: document.getElementById('ip').value,
+                port: document.getElementById('port').value,
+                command: document.getElementById('command').value,
+                class: document.getElementById('class').value,
+                mode: document.getElementById('mode').value,
+                reserved: document.getElementById('reserved').value
+            };
+            socket.emit('send_command', commandData);
         }
+
+        // Listen for "new_response" events from the server
+        socket.on('server_response', function(data) {
+            document.getElementById('status').textContent = data.status;
+            document.getElementById('counter').textContent = data.counter;
+            document.getElementById('errorcode').textContent = data.errorcode;
+            document.getElementById('reserved').textContent = data.reserved;
+        });
     </script>
 </body>
 </html>

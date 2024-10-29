@@ -20,12 +20,14 @@ Vision System Response String:
 
 
 from flask import Flask, render_template, request, jsonify
+from flask_socketio import SocketIO, emit
 import socket
 import time
 import struct
 
 
 app = Flask(__name__)
+socketio = SocketIO(app)
 
 # TCP/IP (Vision System = Server // PLC = Client)
 TCP_IP = '127.0.0.1'  # Vision System IP
@@ -78,21 +80,34 @@ def parse_response(response_bytes):
         'reserved': reserved
     }
 
-
-def send_bytes(ip, port, command_bytes):
+ 
+def tcp_connection(ip, port, command_bytes):
     """
-    Sends the bytearray command to the specified TCP/IP server and receives a response.
-    
+    Connects to the TCP/IP server, sends a command, and listens continuously for responses.
     """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    while True:  # Continuously retry connection if closed
+        try:
+            # Open the socket connection
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect((ip, int(port)))
-            s.sendall(command_bytes)  
-            data = s.recv(BUFFER_SIZE) 
-            return data
-    except Exception as e:
-        print(f"Connection error: {e}")
-        return {"error": f"Connection error: {e}"}
+            s.sendall(command_bytes)
+            
+            # Listen for responses continuously
+            while True:
+                response_bytes = s.recv(BUFFER_SIZE)
+                if not response_bytes:
+                    break  # Exit loop if no data received (server closed connection)
+                
+                # Parse and emit each response to the frontend
+                response_data = parse_response(response_bytes)
+                socketio.emit('server_response', response_data)
+
+            s.close()  # Close socket after server disconnects
+
+        except Exception as e:
+            # Emit an error message to the frontend and wait before retrying
+            socketio.emit('server_response', {"error": f"Connection error: {e}"})
+            time.sleep(5)  # Wait before attempting to reconnect
 
 
 
@@ -106,40 +121,25 @@ def index():
     return render_template('index.html')
 
 
-
-@app.route('/send_command', methods=['POST'])
-def send_command():
+@socketio.on('send_command')
+def handle_send_command(data):
     """
     Route which is executed on button click "Send Command".
     """
-    # get patameters from the frontend 
-    TCP_IP = request.form.get('ip')
-    TCP_PORT = request.form.get('port')
-
-    # Get parameters from request
-    command = request.form.get('command')  # 'start', 'stop', or 'pause'
-    mode = request.form.get('mode')  # 'single' or 'continuous'
-    class_type = request.form.get('class')  # 'nut_top' or 'nut_bottom'
-    reserved_input = request.form.get('reserved')   # reserved = 0 when not provided
-    reserved = int(reserved_input) if reserved_input.isdigit() else 0
-
-    # Map command, mode, class
-    command_byte = COMMANDS.get(command)
-    mode_byte = MODES.get(mode)
-    class_byte = CLASSES.get(class_type)
-
-    # Build the command bytearray and send it
+    TCP_IP = data['ip']
+    TCP_PORT = data['port']
     timestamp = int(time.time())
-    command_bytes = build_command(timestamp, command_byte, mode_byte, class_byte, reserved)
-    response_bytes = send_bytes(TCP_IP, TCP_PORT, command_bytes)
+    command = COMMANDS.get(data['command'])
+    mode = MODES.get(data['mode'])
+    class_type = CLASSES.get(data['class'])
+    reserved = int(data.get('reserved', 0)) if data.get('reserved', '').isdigit() else 0
 
-    # Parse the response bytes
-    response_data = parse_response(response_bytes)
-
-    # Prepare the JSON response
-    return jsonify(response_data)
+    command_bytes = build_command(timestamp, command, mode, class_type, reserved)
+   
+    # Start TCP communication in a separate thread
+    socketio.start_background_task(tcp_connection, TCP_IP, TCP_PORT, command_bytes)
 
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
