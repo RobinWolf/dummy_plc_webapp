@@ -130,9 +130,12 @@ FROM l4t_cuda AS flask_framework
 # Setup workpace
 USER $USER
 RUN mkdir -p /home/$USER/src
-WORKDIR /home/$USER
+WORKDIR /home/$USER/src/plc_webapp
 
 # Install flask
 USER root
 RUN pip install flask
 USER $USER
+
+# Run the webapp
+CMD ["python3", "app.py"]
