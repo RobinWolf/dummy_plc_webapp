@@ -6,7 +6,7 @@
     <title>PLC Control Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>    
+<body>
     <div class="section" id="ip-setup">
         <h2>IP Setup</h2>
         <form id="ip-form">
@@ -29,10 +29,10 @@
             </select>
 
             <label for="class">Class:</label>
-                <select id="command" name="command" required>
-                    <option value="nut_bottom">Welding Nut Bottom</option>
-                    <option value="nut_top">Welding Nut Top</option>
-                </select>
+            <select id="class" name="class" required>
+                <option value="nut_bottom">Welding Nut Bottom</option>
+                <option value="nut_top">Welding Nut Top</option>
+            </select>
 
             <label for="mode">Mode:</label>
             <select id="mode" name="mode" required>
@@ -50,7 +50,7 @@
     <div class="section" id="response-section">
         <h2>Response</h2>
         <div id="response-container">
-            <p><strong>Acknowledgement:</strong> <span id="acknowledgement">-</span></p>
+            <p><strong>Status:</strong> <span id="status">-</span></p>
             <p><strong>Counter:</strong> <span id="counter">-</span></p>
             <p><strong>Error Code:</strong> <span id="errorcode">-</span></p>
             <p id="response-error" style="color: red;"></p>
@@ -60,6 +60,7 @@
     <script>
         function sendCommand() {
             const formData = new FormData();
+
             // Collect IP setup data
             formData.append('ip', document.getElementById('ip').value);
             formData.append('port', document.getElementById('port').value);
@@ -70,6 +71,7 @@
             formData.append('mode', document.getElementById('mode').value);
             formData.append('reserved', document.getElementById('reserved').value);
 
+            // Make the fetch call to the server
             fetch('/send_command', {
                 method: 'POST',
                 body: new URLSearchParams(formData)
@@ -78,11 +80,11 @@
             .then(data => {
                 if (data.error) {
                     document.getElementById('response-error').textContent = data.error;
-                    document.getElementById('acknowledgement').textContent = '-';
+                    document.getElementById('status').textContent = '-';
                     document.getElementById('counter').textContent = '-';
                     document.getElementById('errorcode').textContent = '-';
                 } else {
-                    document.getElementById('acknowledgement').textContent = data.acknowledgement;
+                    document.getElementById('status').textContent = data.status; // Updated field to match backend
                     document.getElementById('counter').textContent = data.counter;
                     document.getElementById('errorcode').textContent = data.errorcode;
                     document.getElementById('response-error').textContent = '';

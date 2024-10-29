@@ -29,7 +29,7 @@ app = Flask(__name__)
 
 # TCP/IP (Vision System = Server // PLC = Client)
 TCP_IP = '127.0.0.1'  # Vision System IP
-TCP_PORT = 5005       # Vision System port
+TCP_PORT = 65432       # Vision System port
 BUFFER_SIZE = 1024    # Size of the buffer for incoming data
 
 # Constants for commands and statuses
@@ -54,17 +54,8 @@ def build_command(timestamp, command, mode, class_type, reserved):
     """
     Build a bytearray command from provided parameters.
     """
-    # 8 bytes for timestamp, 1 byte each for command, mode, class, and reserved
-    command_bytes = bytearray(8 + 1 + 1 + 1 + 1)
 
-    # Pack the timestamp (assuming it's an integer or a timestamp in milliseconds)
-    command_bytes[0:8] = struct.pack('>Q', timestamp)  # Big-endian unsigned long long
-
-    # Fill in the command, status, mode, class, and reserved
-    command_bytes[8] = command
-    command_bytes[9] = mode
-    command_bytes[10] = class_type
-    command_bytes[11] = reserved
+    command_bytes = struct.pack('>QBBBB', timestamp, command, mode, class_type, reserved)
 
     return command_bytes
 
@@ -73,43 +64,34 @@ def parse_response(response_bytes):
     """
     Parses the bytearray response into its components.
     
-    :param response_bytes: The bytearray received from the server
-    :return: Dictionary with parsed data or error message
     """
-    if len(response_bytes) < 17:  # Ensure there's enough data
+    if len(response_bytes) < 17: 
         return {"error": "Response data is too short."}
-
-    # Unpack the response
-    timestamp = struct.unpack('>Q', response_bytes[0:8])[0]  # Unpack the first 8 bytes for timestamp
-    status = response_bytes[8]  # 1 byte for status
-    counter = struct.unpack('>Q', response_bytes[9:17])[0]  # Unpack the next 8 bytes for counter
-    errorcode = response_bytes[17]  # 1 byte for error code
+    
+    timestamp,status,counter,errorcode,reserved = struct.unpack('>QBQBB', response_bytes)
 
     return {
         'timestamp': timestamp,
         'status': status,
         'counter': counter,
-        'errorcode': errorcode
+        'errorcode': errorcode,
+        'reserved': reserved
     }
 
 
-def send_command(ip, port, command_bytes):
+def send_bytes(ip, port, command_bytes):
     """
     Sends the bytearray command to the specified TCP/IP server and receives a response.
     
-    :param ip: The IP address of the server
-    :param port: The port number of the server
-    :param command_bytes: The bytearray command to send
-    :return: Response from the server in bytes
     """
     try:
-        # Create a socket to connect to the TCP/IP server
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((ip, int(port)))  # Connect to the server
-            s.sendall(command_bytes)  # Send the bytearray command
-            data = s.recv(BUFFER_SIZE)  # Receive response
+            s.connect((ip, int(port)))
+            s.sendall(command_bytes)  
+            data = s.recv(BUFFER_SIZE) 
             return data
     except Exception as e:
+        print(f"Connection error: {e}")
         return {"error": f"Connection error: {e}"}
 
 
@@ -127,14 +109,19 @@ def index():
 
 @app.route('/send_command', methods=['POST'])
 def send_command():
-    # Automatically get the current timestamp
-    timestamp = int(time.time())  # Get current time in seconds
+    """
+    Route which is executed on button click "Send Command".
+    """
+    # get patameters from the frontend 
+    TCP_IP = request.form.get('ip')
+    TCP_PORT = request.form.get('port')
 
     # Get parameters from request
     command = request.form.get('command')  # 'start', 'stop', or 'pause'
     mode = request.form.get('mode')  # 'single' or 'continuous'
     class_type = request.form.get('class')  # 'nut_top' or 'nut_bottom'
-    reserved = int(request.form.get('reserved', 0))  # Default reserved to 0 if not provided
+    reserved_input = request.form.get('reserved')   # reserved = 0 when not provided
+    reserved = int(reserved_input) if reserved_input.isdigit() else 0
 
     # Map command, mode, class
     command_byte = COMMANDS.get(command)
@@ -142,8 +129,9 @@ def send_command():
     class_byte = CLASSES.get(class_type)
 
     # Build the command bytearray and send it
+    timestamp = int(time.time())
     command_bytes = build_command(timestamp, command_byte, mode_byte, class_byte, reserved)
-    response_bytes = send_command(TCP_IP, TCP_PORT, command_bytes)
+    response_bytes = send_bytes(TCP_IP, TCP_PORT, command_bytes)
 
     # Parse the response bytes
     response_data = parse_response(response_bytes)
