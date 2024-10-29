@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC Control Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>PLC Control Interface</h1>
+    
+    <div id="button-container">
+        <button onclick="sendCommand('START')">Start</button>
+        <button onclick="sendCommand('STOP')">Stop</button>
+        <button onclick="sendCommand('STATUS')">Status</button>
+    </div>
+
+    <div id="response-container">
+        <h2>Response:</h2>
+        <p id="response-text">No response yet.</p>
+    </div>
+
+    <script>
+        function sendCommand(command) {
+            fetch('/send_command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ command: command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('response-text').textContent = data.response;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
