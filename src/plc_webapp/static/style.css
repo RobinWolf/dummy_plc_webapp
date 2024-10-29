@@ -1,0 +1,19 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    padding-top: 150px; /* Moves everything down by 50px */
+    background-image: url('images/background.jpg');
+    background-size: cover;       /* Make image cover the entire background */
+    background-position: center;  /* Center the image */
+    background-repeat: no-repeat; /* Prevent tiling */
+    background-attachment: fixed; /* Keep the background image fixed during scroll */
+}
+
+.section {
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}

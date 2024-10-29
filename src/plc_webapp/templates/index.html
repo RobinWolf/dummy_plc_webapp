@@ -6,34 +6,88 @@
     <title>PLC Control Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <h1>PLC Control Interface</h1>
-    
-    <div id="button-container">
-        <button onclick="sendCommand('START')">Start</button>
-        <button onclick="sendCommand('STOP')">Stop</button>
-        <button onclick="sendCommand('STATUS')">Status</button>
+<body>    
+    <div class="section" id="ip-setup">
+        <h2>IP Setup</h2>
+        <form id="ip-form">
+            <label for="ip">Server IP:</label>
+            <input type="text" id="ip" name="ip" placeholder="Enter IP" required>
+
+            <label for="port">Server Port:</label>
+            <input type="number" id="port" name="port" placeholder="Enter Port" required>
+        </form>
     </div>
 
-    <div id="response-container">
-        <h2>Response:</h2>
-        <p id="response-text">No response yet.</p>
+    <div class="section" id="command-section">
+        <h2>Command</h2>
+        <form id="command-form">
+            <label for="command">Command:</label>
+            <select id="command" name="command" required>
+                <option value="start">Start</option>
+                <option value="stop">Stop</option>
+                <option value="pause">Pause</option>
+            </select>
+
+            <label for="class">Class:</label>
+            <input type="number" id="class" name="class" min="0" max="100" required>
+
+            <label for="mode">Mode:</label>
+            <select id="mode" name="mode" required>
+                <option value="single">Single</option>
+                <option value="continuous">Continuous</option>
+            </select>
+
+            <label for="reserved">Reserved:</label>
+            <input type="text" id="reserved" name="reserved" placeholder="Optional">
+
+            <button type="button" onclick="sendCommand()">Send Command</button>
+        </form>
+    </div>
+
+    <div class="section" id="response-section">
+        <h2>Response</h2>
+        <div id="response-container">
+            <p><strong>Acknowledgement:</strong> <span id="acknowledgement">-</span></p>
+            <p><strong>Counter:</strong> <span id="counter">-</span></p>
+            <p><strong>Error Code:</strong> <span id="errorcode">-</span></p>
+            <p id="response-error" style="color: red;"></p>
+        </div>
     </div>
 
     <script>
-        function sendCommand(command) {
+        function sendCommand() {
+            const formData = new FormData();
+            // Collect IP setup data
+            formData.append('ip', document.getElementById('ip').value);
+            formData.append('port', document.getElementById('port').value);
+
+            // Collect command data
+            formData.append('command', document.getElementById('command').value);
+            formData.append('class', document.getElementById('class').value);
+            formData.append('mode', document.getElementById('mode').value);
+            formData.append('reserved', document.getElementById('reserved').value);
+
             fetch('/send_command', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({ command: command })
+                body: new URLSearchParams(formData)
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('response-text').textContent = data.response;
+                if (data.error) {
+                    document.getElementById('response-error').textContent = data.error;
+                    document.getElementById('acknowledgement').textContent = '-';
+                    document.getElementById('counter').textContent = '-';
+                    document.getElementById('errorcode').textContent = '-';
+                } else {
+                    document.getElementById('acknowledgement').textContent = data.acknowledgement;
+                    document.getElementById('counter').textContent = data.counter;
+                    document.getElementById('errorcode').textContent = data.errorcode;
+                    document.getElementById('response-error').textContent = '';
+                }
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                document.getElementById('response-error').textContent = 'Error: ' + error;
+            });
         }
     </script>
 </body>
