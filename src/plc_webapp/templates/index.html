@@ -62,24 +62,31 @@
         const socket = io();
 
         function sendCommand() {
-            const commandData = {
-                ip: document.getElementById('ip').value,
-                port: document.getElementById('port').value,
-                command: document.getElementById('command').value,
-                class: document.getElementById('class').value,
-                mode: document.getElementById('mode').value,
-                reserved: document.getElementById('reserved').value
-            };
-            socket.emit('send_command', commandData);
+            const formData = new FormData();
+            formData.append('ip', document.getElementById('ip').value);
+            formData.append('port', document.getElementById('port').value);
+            formData.append('command', document.getElementById('command').value);
+            formData.append('class', document.getElementById('class').value);
+            formData.append('mode', document.getElementById('mode').value);
+            formData.append('reserved', document.getElementById('reserved').value);
+
+            socket.emit('send_command', Object.fromEntries(formData));
         }
 
         // Listen for "new_response" events from the server
         socket.on('server_response', function(data) {
+        if (data.error) {
+            document.getElementById('response-error').textContent = data.error;
+        } else {
+            // Assuming you want to display all responses
             document.getElementById('status').textContent = data.status;
             document.getElementById('counter').textContent = data.counter;
             document.getElementById('errorcode').textContent = data.errorcode;
             document.getElementById('reserved').textContent = data.reserved;
+        }
         });
+
+        
     </script>
 </body>
 </html>

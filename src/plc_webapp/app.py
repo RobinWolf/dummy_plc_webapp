@@ -85,10 +85,9 @@ def tcp_connection(ip, port, command_bytes):
     """
     Connects to the TCP/IP server, sends a command, and listens continuously for responses.
     """
-    while True:  # Continuously retry connection if closed
-        try:
-            # Open the socket connection
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # Open the socket connection
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ip, int(port)))
             s.sendall(command_bytes)
             
@@ -96,18 +95,14 @@ def tcp_connection(ip, port, command_bytes):
             while True:
                 response_bytes = s.recv(BUFFER_SIZE)
                 if not response_bytes:
-                    break  # Exit loop if no data received (server closed connection)
+                    break  # Exit loop if no data received
                 
                 # Parse and emit each response to the frontend
                 response_data = parse_response(response_bytes)
                 socketio.emit('server_response', response_data)
 
-            s.close()  # Close socket after server disconnects
-
-        except Exception as e:
-            # Emit an error message to the frontend and wait before retrying
-            socketio.emit('server_response', {"error": f"Connection error: {e}"})
-            time.sleep(5)  # Wait before attempting to reconnect
+    except Exception as e:
+        socketio.emit('server_response', {"error": f"Connection error: {e}"})
 
 
 
