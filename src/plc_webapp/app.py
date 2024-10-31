@@ -91,6 +91,10 @@ def tcp_connection(ip, port, command_bytes):
         # Open the socket connection
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((ip, int(port)))
+
+            # Emit a message to indicate successful connection
+            socketio.emit('server_response', {"connection_status": "Connection successful."})
+            
             s.sendall(command_bytes)
             
             # Listen for responses continuously

@@ -17,3 +17,10 @@ body {
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* Position error message next to the input fields */
+.error-message {
+    margin-left: 20px; /* Adjust as needed for spacing */
+    font-size: 14px;
+    color: red;
+}

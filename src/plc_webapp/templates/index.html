@@ -16,6 +16,10 @@
 
             <label for="port">Server Port:</label>
             <input type="number" id="port" name="port" placeholder="Enter Port" required>
+
+            <!-- Error message positioned inline -->
+            <span id="response-error" class="error-message" style="color: red;"></span>
+
         </form>
     </div>
 
@@ -56,7 +60,6 @@
             <p><strong>Status:</strong> <span id="status">-</span></p>
             <p><strong>Counter:</strong> <span id="counter">-</span></p>
             <p><strong>Error Code:</strong> <span id="errorcode">-</span></p>
-            <p id="response-error" style="color: red;"></p>
         </div>
     </div>
 
@@ -79,6 +82,10 @@
         socket.on('server_response', function(data) {
         if (data.error) {
             document.getElementById('response-error').textContent = data.error;
+        } else if (data.connection_status) {
+
+        // Display connection status message if it exists
+        document.getElementById('response-error').textContent = data.connection_status;
         } else {
             // Assuming you want to display all responses
             document.getElementById('status').textContent = data.status;
