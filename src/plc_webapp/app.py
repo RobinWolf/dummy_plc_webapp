@@ -38,7 +38,8 @@ BUFFER_SIZE = 1024    # Size of the buffer for incoming data
 COMMANDS = {
     "start": 0x01,
     "stop": 0x02,
-    "pause": 0x03
+    "pause": 0x03,
+    "recover_e_stop": 0x04
 }
 
 MODES = {
