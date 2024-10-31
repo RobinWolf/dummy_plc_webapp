@@ -38,12 +38,13 @@ BUFFER_SIZE = 1024    # Size of the buffer for incoming data
 COMMANDS = {
     "start": 0x01,
     "stop": 0x02,
-    "pause": 0x03
+    "pause": 0x03,
 }
 
 MODES = {
     "single": 0x01,
-    "continuous": 0x02
+    "continuous": 0x02,
+    "recover_e_stop": 0x03
 }
 
 CLASSES = {
