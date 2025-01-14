@@ -48,8 +48,8 @@ MODES = {
 }
 
 CLASSES = {
-    "nut_top": 0x00,
-    "nut_bottom": 0x01,
+    "class_0": 0x00,
+    "class_1": 0x01,
     "all": 0x64 #100
 }
 
