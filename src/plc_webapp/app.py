@@ -50,6 +50,10 @@ MODES = {
 CLASSES = {
     "class_0": 0x00,
     "class_1": 0x01,
+    "class_2": 0x02,
+    "class_3": 0x03,
+    "class_4": 0x04,
+    "class_5": 0x05,
     "all": 0x64 #100
 }
 
