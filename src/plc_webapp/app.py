@@ -44,7 +44,8 @@ COMMANDS = {
 MODES = {
     "single": 0x01,
     "continuous": 0x02,
-    "recover_e_stop": 0x03
+    "recover_e_stop": 0x03,
+    "quality_check": 0x04
 }
 
 CLASSES = {
